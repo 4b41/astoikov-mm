@@ -25,14 +25,36 @@ uuuu
   return tick;
 }
 
+Price MarketMaker::calculateResInf(Price p, Quantity q){
+  Price w = 0.5 * std::pow(this->_params.GAMMA,2) * std::pow(this->_params.SIGMA,2) * std::pow((this_params.targetInventory+1),2);
+  Price coeff = std::pow(this->_params.GAMMA,2) * std::pow(this->_params.SIGMA,2) / (2*w-std::pow(this->_params.GAMMA),2)*std::pow(q,2)*std::pow(this->_params.SIGMA,2));
+  Price A = p + std::log(1+(1-2*q)*coeff)/this->_params.GAMMA;
+  Price B = p + std::log(1+(-1-2*q)*coeff)/this->_params.GAMMA;
+  return (A+B)/2;
+}
+
+Price MarketMaker::calculateBidInf(Price P, Quantity q){
+  Price w = 0.5 * std::pow(this->_params.GAMMA,2) * std::pow(this->_params.SIGMA,2) * std::pow((this_params.targetInventory+1),2);
+  Price coeff = std::pow(this->_params.GAMMA,2) * std::pow(this->_params.SIGMA,2) / (2*w-std::pow(this->_params.GAMMA),2)*std::pow(q,2)*std::pow(this->_params.SIGMA,2));
+  Price B = p + std::log(1+(-1-2*q)*coeff)/this->_params.GAMMA;
+  return B;
+}
+
+Price MarketMaker::calculateAskInf(Price P, Quantity q){
+  Price w = 0.5 * std::pow(this->_params.GAMMA,2) * std::pow(this->_params.SIGMA,2) * std::pow((this_params.targetInventory+1),2);
+  Price coeff = std::pow(this->_params.GAMMA,2) * std::pow(this->_params.SIGMA,2) / (2*w-std::pow(this->_params.GAMMA),2)*std::pow(q,2)*std::pow(this->_params.SIGMA,2));
+  Price A = p + std::log(1+(1-2*q)*coeff)/this->_params.GAMMA;
+  return A;
+}
+
 Price MarketMaker::calculateReservationPrice(Price p, Quantity q, double t) const {
   // r(s,q,t) = s - q*GAMMA*SIGMA^2(T-t)
-  return p - q * this->params.GAMMA * std::pow(this->params.SIGMA,2) * (this->params.T-t);
+  return p - q * this->_params.GAMMA * std::pow(this->_params.SIGMA,2) * (this_params.T-t);
 }
 
 double MarketMaker::calculateSpread(double t) const {
   // delta_a + delta_b = GAMMA*SIGMA^2(T-t) + (2/gamma)ln(1+(gamma/k))
-  return this->params.GAMMA * std::pow(this->params.SIGMA,2) * (this->params.T-t) + (2/this->params.gamma) * log(1+this->params.gamma/this->params.k);
+  return this->_params.GAMMA * std::pow(this->_params.SIGMA,2) * (this->_params.T-t) + (2/this->_params.gamma) * log(1+this->_params.gamma/this->_params.k);
 }
 
 Price MarketMaker::calculateBid(Price r, double s) const {
@@ -44,7 +66,7 @@ Price MarketMaker::calculateAsk(Price r, double s) const {
 }
 
 Quantity MarketMaker::calculateOrderSize() const {
-  double size = this->params.A * (targetInventory - _quantity);
+  double size = this->_params.A * (targetInventory - _quantity);
   return static_cast<Quantity>(std::round(q));
 }
 
@@ -55,10 +77,20 @@ void MarketMaker::updateFromTick(std::string line){
 
 
 void MarketMaker::createOrders(double t){
-  Price r = calculateReservationPrice(_price, _quantity, t);
-  double s = calculateSpread(s);
-  Price b = calculateBid(r,s);
-  Price a = calculateAsk(r,s);
+  Price r;
+  double s;
+  Price b;
+  Price a;
+  if (this->_params.T == 0){
+    r = calculateResInf(_price,_quantity);
+    b = calculateBidInf(_price,_quantity);
+    a = calculateAskInf(_price,_quantity);
+  } else {
+    r = calculateReservationPrice(_price, _quantity, t);
+    s = calculateSpread(s);
+    b = calculateBid(r,s);
+    a = calculateAsk(r,s);
+  }
 
   Quantity q = calculateOrderSize() / 2;
 

@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <map>
+#include <cmath>
 
 struct ModelParams {
   // include maximum quantity or risk params?
@@ -22,13 +23,13 @@ struct ModelParams {
   double dt; // size of time step
   double N; // number of time steps (dt)
 
-  Quantity targetQuantity;
+  Quantity targetInventory;
 }
 
 class MarketMaker {
   public:
 
-    MarketMaker(const ModelParams& params std::string symbol);
+    MarketMaker(const ModelParams& params, std::string symbol);
 
     Price getPnl() const { return _pnl; }
     Price getUPnl() const { return _upnl; }
